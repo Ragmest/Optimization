@@ -626,17 +626,35 @@ std::vector<double> HandRecognition::CalculateAttributesFromHand(const bool& isD
 {
 	ClearAllVectors();
 
+	//1
+	auto start = std::chrono::high_resolution_clock::now();
 	src = cv::imread(path + "/" + filename, cv::IMREAD_COLOR);
+	auto finish = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> elapsed = finish - start;
+	std::cout << elapsed.count() << "\n";
+
 	outline = cv::Mat(src.rows, src.cols, 0, cv::Scalar::all(0));
 	profile = cv::Mat(src.rows, src.cols, 0, cv::Scalar::all(0));
 	fingerProfile = cv::Mat(src.rows, src.cols, 0, cv::Scalar::all(0));
 
+	//2
+	start = std::chrono::high_resolution_clock::now();
 	cvtColor(src, src, cv::COLOR_BGR2GRAY);
 	SaveImage(path, filename + "-1-cvtColor.bmp", src, isDebug);
+	finish = std::chrono::high_resolution_clock::now();
+	elapsed = finish - start;
+	std::cout << elapsed.count() << "\n";
 
+	//3
+	start = std::chrono::high_resolution_clock::now();
 	normalize(src, src, 0, 255, cv::NORM_MINMAX);
 	SaveImage(path, filename + "-2-normalize.bmp", src, isDebug);
+	finish = std::chrono::high_resolution_clock::now();
+	elapsed = finish - start;
+	std::cout << elapsed.count() << "\n";
 
+	//4
+	start = std::chrono::high_resolution_clock::now();
 	size = src.rows * src.cols;
 	if (size == (576 * 640)) 
 		blurSize = 10;  // TODO: make this scale depending on size.
@@ -644,29 +662,60 @@ std::vector<double> HandRecognition::CalculateAttributesFromHand(const bool& isD
 		blurSize = 25; 
 	blur(src, src, cv::Size(blurSize, blurSize));
 	SaveImage(path, filename + "-3-blur.bmp", src, isDebug);
+	finish = std::chrono::high_resolution_clock::now();
+	elapsed = finish - start;
+	std::cout << elapsed.count() << "\n";
 
-	normalize(src, src, 0, 255, cv::NORM_MINMAX);
+	//5
+	start = std::chrono::high_resolution_clock::now();
 	threshold(src, src, 37, 255, cv::THRESH_BINARY);
 	SaveImage(path, filename + "-4-threshold.bmp", src, isDebug);
+	finish = std::chrono::high_resolution_clock::now();
+	elapsed = finish - start;
+	std::cout << elapsed.count() << "\n";
 
+	//6
+	start = std::chrono::high_resolution_clock::now();
 	erode(src, src, element);
 	SaveImage(path, filename + "-5-erode.bmp", src, isDebug);
+	finish = std::chrono::high_resolution_clock::now();
+	elapsed = finish - start;
+	std::cout << elapsed.count() << "\n";
 
+	//7
+	start = std::chrono::high_resolution_clock::now();
 	//Canny(src, src, 0, 0, 3);
 	filter2D(src, src, src.depth(), kern);
 	SaveImage(path, filename + "-6-filter2D.bmp", src, isDebug);
+	finish = std::chrono::high_resolution_clock::now();
+	elapsed = finish - start;
+	std::cout << elapsed.count() << "\n";
 
+	//8
+	start = std::chrono::high_resolution_clock::now();
 	FindPointsOfOutline();
-
 	for (int i = 0; i < outlineVector.size(); i++)
 		profile.at<uchar>(cv::Point(outlineVector[i].x, outlineVector[i].y)) = 255;
 	SaveImage(path, filename + "-7-handOutline.bmp", profile, isDebug);
+	finish = std::chrono::high_resolution_clock::now();
+	elapsed = finish - start;
+	std::cout << elapsed.count() << "\n";
 
+	//9
+	start = std::chrono::high_resolution_clock::now();
 	FindHandProfile();
 	SaveImage(path, filename + "-8-handProfile.bmp", profile, isDebug);
+	finish = std::chrono::high_resolution_clock::now();
+	elapsed = finish - start;
+	std::cout << elapsed.count() << "\n";
 
+	//10
+	start = std::chrono::high_resolution_clock::now();
 	FindCentroidByErosion();
 	FindDistancesFromCentroid();
+	finish = std::chrono::high_resolution_clock::now();
+	elapsed = finish - start;
+	std::cout << elapsed.count() << "\n";
 
 	/*
 	if (isDebug)
@@ -678,11 +727,24 @@ std::vector<double> HandRecognition::CalculateAttributesFromHand(const bool& isD
 	}
 	*/
 
+	//11
+	start = std::chrono::high_resolution_clock::now();
 	FindMaximumOfFiveFingersByDividing();
+	finish = std::chrono::high_resolution_clock::now();
+	elapsed = finish - start;
+	std::cout << elapsed.count() << "\n";
+
+	//12
+	start = std::chrono::high_resolution_clock::now();
 	FindMinimumBetweenFingers();
 	ExtendMinimumPointsByTwoEncircled();
-	FindFingersOutlines();
+	finish = std::chrono::high_resolution_clock::now();
+	elapsed = finish - start;
+	std::cout << elapsed.count() << "\n";
 
+	//13
+	start = std::chrono::high_resolution_clock::now();
+	FindFingersOutlines();
 	if (isDebug)
 	{
 		cv::Point3i centr = CheckDistanceFromPoint(profile, centroid);
@@ -703,10 +765,18 @@ std::vector<double> HandRecognition::CalculateAttributesFromHand(const bool& isD
 		//	DrawLineInPoint(profile, *it2, 200);
 		//}
 	}
-
 	SaveImage(path, filename + "-9-centroid.bmp", profile, isDebug);
+	finish = std::chrono::high_resolution_clock::now();
+	elapsed = finish - start;
+	std::cout << elapsed.count() << "\n";
+
+	//14
+	start = std::chrono::high_resolution_clock::now();
 	CalculateAtributes(path, filename, isDebug);
 	NormalizeAttributes();
+	finish = std::chrono::high_resolution_clock::now();
+	elapsed = finish - start;
+	std::cout << elapsed.count() << "\n";
 
 	return attributes;
 }
