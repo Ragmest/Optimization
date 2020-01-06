@@ -1,12 +1,6 @@
 #include "HandRecognition.h"
 #include <opencv2/opencv.hpp>
 
-void SaveImage(const std::string &path, const std::string &name, const cv::Mat& img, const bool& isDebug)
-{
-	if (isDebug)
-		cv::imwrite(path + "/../debug/" + name, img);
-}
-
 HandRecognition::HandRecognition()
 {
 }
@@ -163,124 +157,6 @@ void HandRecognition::FindPointsOfOutline()
 	}
 }
 
-cv::Point3i HandRecognition::CheckDistanceFromPoint(const cv::Mat& profile, cv::Point& point)
-{
-	int r = point.x;
-	int c = point.y;
-	for (int dis = 1; ; dis++)
-	{
-		if (c + dis > profile.rows || r + dis > profile.cols || c - dis < 0 || r - dis < 0)
-			return cv::Point3i(r, c, dis);
-		int end = dis / 2 + 1;
-		for (int x = dis, y = 0; y < end; x--, y++)
-		{
-			if (y == 0)
-				if (profile.at<uchar>(cv::Point(r + x, c + 0)) <255 ||
-					profile.at<uchar>(cv::Point(r - x, c + 0)) <255 ||
-					profile.at<uchar>(cv::Point(r + 0, c + x)) <255 ||
-					profile.at<uchar>(cv::Point(r + 0, c - x)) <255)
-					return cv::Point3i(r, c, dis);
-				else
-					if (y == x)
-						if (profile.at<uchar>(cv::Point(r + x, c + x)) <255 ||
-							profile.at<uchar>(cv::Point(r - x, c + x)) <255 ||
-							profile.at<uchar>(cv::Point(r + x, c - x)) <255 ||
-							profile.at<uchar>(cv::Point(r - x, c - x)) <255)
-							return cv::Point3i(r, c, dis);
-						else
-							if (profile.at<uchar>(cv::Point(r + x, c + y)) <255 ||
-								profile.at<uchar>(cv::Point(r + x, c - y)) <255 ||
-								profile.at<uchar>(cv::Point(r - x, c + y)) <255 ||
-								profile.at<uchar>(cv::Point(r - x, c - y)) <255 ||
-								profile.at<uchar>(cv::Point(r + y, c + x)) <255 ||
-								profile.at<uchar>(cv::Point(r + y, c - x)) <255 ||
-								profile.at<uchar>(cv::Point(r - y, c + x)) <255 ||
-								profile.at<uchar>(cv::Point(r - y, c - x)) <255)
-								return cv::Point3i(r, c, dis);
-		}
-	}
-}
-
-void HandRecognition::DrawDistRec(cv::Mat& profile, cv::Point3i& point)
-{
-	int r = point.x;
-	int c = point.y;
-	int dis = point.z;
-	int end = dis / 2 + 1;
-	for (int x = dis, y = 0; y < end; x--, y++)
-	{
-		if (y == 0)
-		{
-			profile.at<uchar>(cv::Point(r + x, c + 0)) = 0;
-			profile.at<uchar>(cv::Point(r - x, c + 0)) = 0;
-			profile.at<uchar>(cv::Point(r + 0, c + x)) = 0;
-			profile.at<uchar>(cv::Point(r + 0, c - x)) = 0;
-		}
-		else
-			if (y == x)
-			{
-				profile.at<uchar>(cv::Point(r + x, c + x)) = 0;
-				profile.at<uchar>(cv::Point(r - x, c + x)) = 0;
-				profile.at<uchar>(cv::Point(r + x, c - x)) = 0;
-				profile.at<uchar>(cv::Point(r - x, c - x)) = 0;
-			}
-			else
-			{
-				profile.at<uchar>(cv::Point(r + x, c + y)) = 0;
-				profile.at<uchar>(cv::Point(r + x, c - y)) = 0;
-				profile.at<uchar>(cv::Point(r - x, c + y)) = 0;
-				profile.at<uchar>(cv::Point(r - x, c - y)) = 0;
-				profile.at<uchar>(cv::Point(r + y, c + x)) = 0;
-				profile.at<uchar>(cv::Point(r + y, c - x)) = 0;
-				profile.at<uchar>(cv::Point(r - y, c + x)) = 0;
-				profile.at<uchar>(cv::Point(r - y, c - x)) = 0;
-			}				
-	}
-}
-
-void HandRecognition::DrawCrossInPoint(cv::Mat & img, cv::Point3i & point, const int& color, const bool& blackDot)
-{
-	int r = point.x;
-	int c = point.y;
-	if (r + 1 < img.rows)
-		img.at<uchar>(cv::Point(r + 1, c + 0)) = color;
-	if (r - 1 > 0)
-		img.at<uchar>(cv::Point(r - 1, c + 0)) = color;
-	if (c + 1 < img.cols)
-		img.at<uchar>(cv::Point(r + 0, c + 1)) = color;
-	if (c - 1  > 0)
-		img.at<uchar>(cv::Point(r + 0, c - 1)) = color;
-	if (blackDot)
-	{
-		img.at<uchar>(cv::Point(r, c)) = 0;
-		if (r + 2 < img.rows)
-			img.at<uchar>(cv::Point(r + 2, c + 0)) = color;
-		if (r - 2 > 0)
-			img.at<uchar>(cv::Point(r - 2, c + 0)) = color;
-		if (c + 2 < img.cols)
-			img.at<uchar>(cv::Point(r + 0, c + 2)) = color;
-		if (c - 2 > 0)
-			img.at<uchar>(cv::Point(r + 0, c - 2)) = color;
-	}
-	else
-		img.at<uchar>(cv::Point(r, c)) = color;
-}
-
-void HandRecognition::DrawLineInPoint(cv::Mat & img, cv::Point & point, const int& color)
-{
-	int r = point.x;
-	int c = point.y;
-	if (c + 1 < img.cols)
-		img.at<uchar>(cv::Point(r + 0, c + 1)) = color;
-	if (c - 1 > 0)
-		img.at<uchar>(cv::Point(r + 0, c - 1)) = color;
-	if (c + 2 < img.cols)
-		img.at<uchar>(cv::Point(r + 0, c + 2)) = color;
-	if (c - 2 > 0)
-		img.at<uchar>(cv::Point(r + 0, c - 2)) = color;
-	img.at<uchar>(cv::Point(r, c)) = color;
-}
-
 void HandRecognition::NormalizeAttributes()
 {
 	double distance = attributes[0] * attributes[0];
@@ -309,15 +185,6 @@ void HandRecognition::FindFirstPointOfHandOutline()
 	}
 }
 
-void HandRecognition::FindHandProfile()
-{
-	cv::Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3), cv::Point(0, 0));
-	dilate(profile, profile, element); //sometimes floodFill doesn't work on one pixel profile, so we make it wider by dilate
-	floodFill(profile, cv::Point(0, 0), cv::Scalar(255));
-	cv::bitwise_not(profile, profile);
-	erode(profile, profile, element); //here we reversing dilate
-}
-
 void HandRecognition::FindSecondPointOfHandOutline()
 {
 	cv::Point current = outlineVector.back();
@@ -334,105 +201,54 @@ void HandRecognition::FindSecondPointOfHandOutline()
 	}
 }
 
-bool HandRecognition::checkPoint(const int &x, const int &y, std::vector<cv::Point> &outline)
-{
-	cv::Point p = cv::Point(x, y);
 
-	std::vector<cv::Point>::reverse_iterator it;
-	for (it = outline.rbegin(); it != outline.rend(); ++it)
-	{
-		if (p.x == it->x && p.y == it->y)
-			return false;		
-	}
-
-	outline.push_back(p);
-	return true;
-}
-
-void HandRecognition::FindDistancesFromCentroid()
+void HandRecognition::FindDistancesMiddlePoint()
 {
 	for (int i = 0; i < outlineVector.size(); i++)
 	{
-		double x = abs(outlineVector.at(i).x - centroid.x);
-		double y = abs(outlineVector.at(i).y - centroid.y);
+		double x = abs(outlineVector.at(i).x - middlePoint.x);
+		double y = abs(outlineVector.at(i).y - middlePoint.y);
 		double dist = sqrt(x*x + y*y);
-		pointsWithDistancesFromCentroid.push_back(cv::Point3i(outlineVector.at(i).x, outlineVector.at(i).y, dist));
-		distancesFromCentroid.push_back(dist);
+		pointsWithDistancesFromMiddle.push_back(cv::Point3i(outlineVector.at(i).x, outlineVector.at(i).y, dist));
 	}
 }
-
-/*
-void HandRecognition::MakeListsOfLocalMinAndMax()
-{
-	for (int i = 0; i < pointsWithDistancesFromCentroid.size(); i++)
-	{
-		if (pointsWithDistancesFromCentroid[i - 1].z < pointsWithDistancesFromCentroid[i].z)
-		{
-			if (pointsWithDistancesFromCentroid[i + 1].z <= pointsWithDistancesFromCentroid[i].z)
-			{
-				maximumList.emplace_back(cv::Point3i	(pointsWithDistancesFromCentroid[i].x,
-														pointsWithDistancesFromCentroid[i].y,
-														pointsWithDistancesFromCentroid[i].z),
-														i);
-			}
-		}
-		if (pointsWithDistancesFromCentroid[i - 1].z > pointsWithDistancesFromCentroid[i].z)
-		{
-			if (pointsWithDistancesFromCentroid[i + 1].z >= pointsWithDistancesFromCentroid[i].z)
-			{
-				minimumList.emplace_back(cv::Point3i(	pointsWithDistancesFromCentroid[i].x,
-														pointsWithDistancesFromCentroid[i].y,
-														pointsWithDistancesFromCentroid[i].z),
-														i);
-			}
-		}
-	}
-}
-*/
 
 void HandRecognition::FindMaximumOfFiveFingersByDividing()
 {
-	int size = pointsWithDistancesFromCentroid.size();
+	int size = pointsWithDistancesFromMiddle.size();
 	int section = size * 0.01f; // 1%
 	int sectionMin = size * 0.01f; // 1%
-	//bool tryOnce = false;
 	while (true)
 	{
 		for (int i = section; i < size; i += section)
 		{
-			std::pair<cv::Point3i, int> sectionMaximum;// = std::make_pair(cv::Point3i(0, 0, 0), 0);
+			std::pair<cv::Point3i, int> sectionMaximum;
 			for (int j = i - (section * 0.5); j < i + (section * 0.5) && j < size; j++)
 			{
-				if (pointsWithDistancesFromCentroid[j].z > sectionMaximum.first.z)
+				if (pointsWithDistancesFromMiddle[j].z > sectionMaximum.first.z)
 				{
 					if(maximumFiveFingerPoints.empty() || (maximumFiveFingerPoints.back().second + (section * 0.5)) < j)
-						sectionMaximum = std::make_pair(cv::Point3i(pointsWithDistancesFromCentroid[j].x,
-							pointsWithDistancesFromCentroid[j].y,
-							pointsWithDistancesFromCentroid[j].z),
+						sectionMaximum = std::make_pair(cv::Point3i(pointsWithDistancesFromMiddle[j].x,
+							pointsWithDistancesFromMiddle[j].y,
+							pointsWithDistancesFromMiddle[j].z),
 							j);
 				}
 			}
 			if (sectionMaximum.first.z != 0)
 				maximumFiveFingerPoints.push_back(sectionMaximum);
-			//sectionsEnds.push_back(cv::Point(pointsWithDistancesFromCentroid[i + section].x, pointsWithDistancesFromCentroid[i + section].y));
-			//debug
 		}
 		if (maximumFiveFingerPoints.size() < 5)
 		{
 			sectionMin = sectionMin * 0.5;
 			section = section - sectionMin;
 			maximumFiveFingerPoints.clear();
-			//sectionsEnds.clear();
 		}
 		if (maximumFiveFingerPoints.size() == 5)
-		{
 			break;
-		}
 		if (maximumFiveFingerPoints.size() > 5)
 		{
 			section = section + sectionMin;
 			maximumFiveFingerPoints.clear();
-			//sectionsEnds.clear();
 		}
 	}
 }
@@ -445,11 +261,11 @@ void HandRecognition::FindMinimumBetweenFingers()
 		std::pair<cv::Point3i, int> sectionMinimum = std::make_pair(cv::Point3i(0, 0, INT_MAX), 0);
 		for (int i = it->second; i < std::next(it)->second; i++)
 		{
-			if (sectionMinimum.first.z > pointsWithDistancesFromCentroid[i].z)
+			if (sectionMinimum.first.z > pointsWithDistancesFromMiddle[i].z)
 			{
-				sectionMinimum = std::make_pair(cv::Point3i(pointsWithDistancesFromCentroid[i].x,
-					pointsWithDistancesFromCentroid[i].y,
-					pointsWithDistancesFromCentroid[i].z),
+				sectionMinimum = std::make_pair(cv::Point3i(pointsWithDistancesFromMiddle[i].x,
+					pointsWithDistancesFromMiddle[i].y,
+					pointsWithDistancesFromMiddle[i].z),
 					i);
 			}
 		}
@@ -467,11 +283,11 @@ void HandRecognition::ExtendMinimumPointsByTwoEncircled()
 		cv::Point rotatedPoint = RotatePoint(cv::Point(minimumEncircledFiveFingerPoints[0].first.x, minimumEncircledFiveFingerPoints[0].first.y), angle, cv::Point(maximumFiveFingerPoints[0].first.x, maximumFiveFingerPoints[0].first.y));
 		for (int i = maximumFiveFingerPoints[0].second; i > 0; i--)
 		{
-			if (abs(pointsWithDistancesFromCentroid[i].y - rotatedPoint.y) < pixelAprox && abs(pointsWithDistancesFromCentroid[i].x - rotatedPoint.x) < pixelAprox)
+			if (abs(pointsWithDistancesFromMiddle[i].y - rotatedPoint.y) < pixelAprox && abs(pointsWithDistancesFromMiddle[i].x - rotatedPoint.x) < pixelAprox)
 			{
-				minimumEncircledFiveFingerPoints.insert(minimumEncircledFiveFingerPoints.begin(), std::make_pair(cv::Point3i(pointsWithDistancesFromCentroid[i].x,
-					pointsWithDistancesFromCentroid[i].y,
-					pointsWithDistancesFromCentroid[i].z),
+				minimumEncircledFiveFingerPoints.insert(minimumEncircledFiveFingerPoints.begin(), std::make_pair(cv::Point3i(pointsWithDistancesFromMiddle[i].x,
+					pointsWithDistancesFromMiddle[i].y,
+					pointsWithDistancesFromMiddle[i].z),
 					i));
 				found = true;
 				break;
@@ -481,22 +297,22 @@ void HandRecognition::ExtendMinimumPointsByTwoEncircled()
 	if (found == false) 
 	{
 		//insert first
-		minimumEncircledFiveFingerPoints.insert(minimumEncircledFiveFingerPoints.begin(), std::make_pair(cv::Point3i(pointsWithDistancesFromCentroid[0].x,
-			pointsWithDistancesFromCentroid[0].y,
-			pointsWithDistancesFromCentroid[0].z),
+		minimumEncircledFiveFingerPoints.insert(minimumEncircledFiveFingerPoints.begin(), std::make_pair(cv::Point3i(pointsWithDistancesFromMiddle[0].x,
+			pointsWithDistancesFromMiddle[0].y,
+			pointsWithDistancesFromMiddle[0].z),
 			0));
 	}
 	found = false;
 	for (int angle = 0; angle > -90 && found == false; angle--)
 	{
 		cv::Point rotatedPoint = RotatePoint(cv::Point(minimumEncircledFiveFingerPoints.back().first.x, minimumEncircledFiveFingerPoints.back().first.y), angle, cv::Point(maximumFiveFingerPoints[4].first.x, maximumFiveFingerPoints[4].first.y));
-		for (int i = maximumFiveFingerPoints.back().second; i < pointsWithDistancesFromCentroid.size(); i++)
+		for (int i = maximumFiveFingerPoints.back().second; i < pointsWithDistancesFromMiddle.size(); i++)
 		{
-			if (abs(pointsWithDistancesFromCentroid[i].y - rotatedPoint.y) < pixelAprox && abs(pointsWithDistancesFromCentroid[i].x - rotatedPoint.x) < pixelAprox)
+			if (abs(pointsWithDistancesFromMiddle[i].y - rotatedPoint.y) < pixelAprox && abs(pointsWithDistancesFromMiddle[i].x - rotatedPoint.x) < pixelAprox)
 			{
-				minimumEncircledFiveFingerPoints.push_back(std::make_pair(cv::Point3i(pointsWithDistancesFromCentroid[i].x,
-					pointsWithDistancesFromCentroid[i].y,
-					pointsWithDistancesFromCentroid[i].z),
+				minimumEncircledFiveFingerPoints.push_back(std::make_pair(cv::Point3i(pointsWithDistancesFromMiddle[i].x,
+					pointsWithDistancesFromMiddle[i].y,
+					pointsWithDistancesFromMiddle[i].z),
 					i));
 				found = true;
 				break;
@@ -506,10 +322,10 @@ void HandRecognition::ExtendMinimumPointsByTwoEncircled()
 	if (found == false)
 	{
 		//push last
-		int last = pointsWithDistancesFromCentroid.size() - 1;
-		minimumEncircledFiveFingerPoints.push_back(std::make_pair(cv::Point3i(pointsWithDistancesFromCentroid[last].x,
-			pointsWithDistancesFromCentroid[last].y,
-			pointsWithDistancesFromCentroid[last].z),
+		int last = pointsWithDistancesFromMiddle.size() - 1;
+		minimumEncircledFiveFingerPoints.push_back(std::make_pair(cv::Point3i(pointsWithDistancesFromMiddle[last].x,
+			pointsWithDistancesFromMiddle[last].y,
+			pointsWithDistancesFromMiddle[last].z),
 			last));
 	}
 }
@@ -522,10 +338,7 @@ void HandRecognition::ClearAllVectors()
 	fingersOutlinesVector[2].clear();
 	fingersOutlinesVector[3].clear();
 	fingersOutlinesVector[4].clear();
-	//sectionsEnds.clear();
-	distancesFromBorder.clear();
-	pointsWithDistancesFromCentroid.clear();
-	distancesFromCentroid.clear();
+	pointsWithDistancesFromMiddle.clear();
 	attributes.clear();
 	maximumFiveFingerPoints.clear();
 	minimumEncircledFiveFingerPoints.clear();
@@ -551,7 +364,12 @@ void HandRecognition::FindFingersOutlines()
 	}
 }
 
-void HandRecognition::CalculateAtributes(const std::string& path, const std::string& filename, const bool& isDebug)
+bool comparePoint(cv::Point i1, cv::Point i2)
+{
+	return (i1.y < i2.y);
+}
+
+void HandRecognition::CalculateAtributes(const std::string& path, const std::string& filename)
 {
 	double x, y;
 	cv::Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(6, 6), cv::Point(0, 0));
@@ -572,30 +390,77 @@ void HandRecognition::CalculateAtributes(const std::string& path, const std::str
 	y = minimumEncircledFiveFingerPoints[5].first.y - maximumFiveFingerPoints[4].first.y;
 	attributes.push_back(sqrt(x * x + y * y));
 
-	for (int j = 0; j < 5; j++)
+	for (int j = 0; j < 5; ++j)
 	{
-		for (int i = 0; i < fingersOutlinesVector[j].size(); i++)
-			fingerProfile.at<uchar>(cv::Point(fingersOutlinesVector[j][i].x, fingersOutlinesVector[j][i].y)) = 255;
+		cv::Point start = fingersOutlinesVector[j].front();
+		cv::Point end = fingersOutlinesVector[j].back();
 
-		cv::Point target = cv::Point(minimumEncircledFiveFingerPoints[j].first.x,
-			minimumEncircledFiveFingerPoints[j].first.y);
-		cv::Point current = cv::Point(minimumEncircledFiveFingerPoints[j + 1].first.x,
-			minimumEncircledFiveFingerPoints[j + 1].first.y);
-		line(fingerProfile, target, current, 255);
+		float tmp1 = (start.y - end.y);
+		float tmp2 = (start.x - end.x);
+		float a = tmp1 / tmp2;
+		float b = start.y - a * start.x;
 
-		//SaveImage(path, filename + "-10-fingerOutline" + std::to_string(j) + ".bmp", fingerProfile, isDebug);
-		dilate(fingerProfile, fingerProfile, element); //sometimes floodFill doesn't work on one pixel profile, so we make it wider by dilate
-		floodFill(fingerProfile, cv::Point(0, 0), cv::Scalar(255));
-		bitwise_not(fingerProfile, fingerProfile);
-		erode(fingerProfile, fingerProfile, element); //here we reversing dilate
-		bitwise_and(fingerProfile, profile, fingerProfile);
-		SaveImage(path, filename + "-10-fingerProfile" + std::to_string(j) + ".bmp", fingerProfile, isDebug);
-		attributes.push_back(contourArea(fingersOutlinesVector[j]));
-		fingerProfile = cv::Scalar::all(0);
+		if (j!=4)
+		{
+			for (int i = end.x; i > start.x; --i)
+			{
+				int y = a * i + b;
+				fingersOutlinesVector[j].push_back(cv::Point(i, y));
+			}
+		}
+		else
+		{
+			bool isDoubledPoint = false;
+			float invA = 1 / a;
+			for (int i = end.y; i > start.y; --i)
+			{
+				int x = (i - b) * invA;
+				fingersOutlinesVector[j].push_back(cv::Point(x, i));
+				if (isDoubledPoint == false)
+				{
+					for (int k = 0; k < fingersOutlinesVector[j].size() - 2; k++)
+					{
+						if (fingersOutlinesVector[j].back().x == fingersOutlinesVector[j].at(k).x
+							&& fingersOutlinesVector[j].back().y == fingersOutlinesVector[j].at(k).y)
+						{
+							isDoubledPoint = true;
+							fingersOutlinesVector[j].erase(fingersOutlinesVector[j].begin(), fingersOutlinesVector[j].begin() + k);
+							break;
+						}
+					}
+					if (isDoubledPoint == true)
+						break;
+				}
+			}
+		}
+		sort(fingersOutlinesVector[j].begin(), fingersOutlinesVector[j].end(), comparePoint);
+
+		double area = 0;
+		int min, max, y = fingersOutlinesVector[j].front().y;
+		min = max = fingersOutlinesVector[j].front().x;
+		for (int i = 0; i < fingersOutlinesVector[j].size(); ++i)
+		{
+			cv::Point p = fingersOutlinesVector[j].at(i);
+			if (y != p.y)
+			{
+				y = p.y;
+				area += max - min + 1;
+				min = max = p.x;
+			}
+			else
+			{
+				if (p.x > max)
+					max = p.x;
+				if (p.x < min)
+					min = p.x;
+			}		
+		}
+		area += max - min;
+		attributes.push_back(area);
 	}
 }
 
-void HandRecognition::FindCentroidByErosion()
+void HandRecognition::FindMiddlePoint()
 {
 	double x = 0, y = 0;
 	for (int i = 0; i < outlineVector.size() - 1; ++i)
@@ -611,38 +476,10 @@ void HandRecognition::FindCentroidByErosion()
 		y += start.y;
 	}
 	int size = outlineVector.size() + (end.x - start.x);
-	centroid = cv::Point(x / size, y / size);
-	//double m = 0, M = 255;
-	//int cols = src.cols * 0.5, rows = src.rows * 0.5;
-	//cv::Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(50, 50));
-	//cv::Mat eroded1 = src.clone();
-	//cv::Mat eroded2 = src.clone();
-
-	////cv::copyMakeBorder(eroded1, eroded2, 1, 1, 1, 1, cv::BORDER_CONSTANT, 0);
-	//while (cv::countNonZero(eroded2) > 0)
-	//{
-	//	eroded1 = eroded2.clone();
-	//	cv::erode(eroded1, eroded2, element);
-
-	//	//if (cols > 3 || rows > 3)
-	//	//{
-	//	//	cols *= 0.5;
-	//	//	rows *= 0.5;
-	//	//}
-	//	//else
-	//	//{
-	//	//	cols = 3;
-	//	//	rows = 3;
-	//	//}
-	//	////element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
-	//	//cv::imwrite("erode.bmp", eroded2);
-	//	//cv::imshow("erode", eroded2);
-	//	//cv::waitKey(0);
-	//}
-	//cv::minMaxLoc(eroded1, &m, &M, NULL, &centroid);
+	middlePoint = cv::Point(x / size, y / size);
 }
 
-std::vector<double> HandRecognition::CalculateAttributesFromHand(const bool& isDebug, const std::string& path,const std::string& filename)
+std::vector<double> HandRecognition::CalculateAttributesFromHand(const std::string& path,const std::string& filename)
 {
 	ClearAllVectors();
 
@@ -653,14 +490,9 @@ std::vector<double> HandRecognition::CalculateAttributesFromHand(const bool& isD
 	std::chrono::duration<double> elapsed = finish - start;
 	std::cout << elapsed.count() << "\n";
 
-	outline = cv::Mat(src.rows, src.cols, 0, cv::Scalar::all(0));
-	profile = cv::Mat(src.rows, src.cols, 0, cv::Scalar::all(0));
-	fingerProfile = cv::Mat(src.rows, src.cols, 0, cv::Scalar::all(0));
-
 	//2
 	start = std::chrono::high_resolution_clock::now();
 	cvtColor(src, src, cv::COLOR_BGR2GRAY);
-	SaveImage(path, filename + "-1-cvtColor.bmp", src, isDebug);
 	finish = std::chrono::high_resolution_clock::now();
 	elapsed = finish - start;
 	std::cout << elapsed.count() << "\n";
@@ -668,7 +500,6 @@ std::vector<double> HandRecognition::CalculateAttributesFromHand(const bool& isD
 	//3
 	start = std::chrono::high_resolution_clock::now();
 	normalize(src, src, 0, 255, cv::NORM_MINMAX);
-	SaveImage(path, filename + "-2-normalize.bmp", src, isDebug);
 	finish = std::chrono::high_resolution_clock::now();
 	elapsed = finish - start;
 	std::cout << elapsed.count() << "\n";
@@ -681,7 +512,6 @@ std::vector<double> HandRecognition::CalculateAttributesFromHand(const bool& isD
 	else
 		blurSize = 25; 
 	blur(src, src, cv::Size(blurSize, blurSize));
-	SaveImage(path, filename + "-3-blur.bmp", src, isDebug);
 	finish = std::chrono::high_resolution_clock::now();
 	elapsed = finish - start;
 	std::cout << elapsed.count() << "\n";
@@ -689,7 +519,6 @@ std::vector<double> HandRecognition::CalculateAttributesFromHand(const bool& isD
 	//5
 	start = std::chrono::high_resolution_clock::now();
 	threshold(src, src, 37, 255, cv::THRESH_BINARY);
-	SaveImage(path, filename + "-4-threshold.bmp", src, isDebug);
 	finish = std::chrono::high_resolution_clock::now();
 	elapsed = finish - start;
 	std::cout << elapsed.count() << "\n";
@@ -697,55 +526,30 @@ std::vector<double> HandRecognition::CalculateAttributesFromHand(const bool& isD
 	//6
 	start = std::chrono::high_resolution_clock::now();
 	erode(src, src, element);
-	SaveImage(path, filename + "-5-erode.bmp", src, isDebug);
 	finish = std::chrono::high_resolution_clock::now();
 	elapsed = finish - start;
 	std::cout << elapsed.count() << "\n";
 
 	//7
-	start = std::chrono::high_resolution_clock::now();
-	//Canny(src, src, 0, 0, 3);
-	//filter2D(src, src, src.depth(), kern);
-	//SaveImage(path, filename + "-6-filter2D.bmp", src, isDebug);
-	finish = std::chrono::high_resolution_clock::now();
-	elapsed = finish - start;
-	std::cout << elapsed.count() << "\n";
+	std::cout << "0.0" << "\n";
 
 	//8
 	start = std::chrono::high_resolution_clock::now();
 	FindPointsOfOutline();
-	//for (int i = 0; i < outlineVector.size(); i++)
-	//	profile.at<uchar>(cv::Point(outlineVector[i].x, outlineVector[i].y)) = 255;
-	//SaveImage(path, filename + "-7-handOutline.bmp", profile, isDebug);
 	finish = std::chrono::high_resolution_clock::now();
 	elapsed = finish - start;
 	std::cout << elapsed.count() << "\n";
 
 	//9
-	start = std::chrono::high_resolution_clock::now();
-	//FindHandProfile();
-	//SaveImage(path, filename + "-8-handProfile.bmp", profile, isDebug);
-	finish = std::chrono::high_resolution_clock::now();
-	elapsed = finish - start;
-	std::cout << elapsed.count() << "\n";
+	std::cout << "0.0" << "\n";
 
 	//10
 	start = std::chrono::high_resolution_clock::now();
-	FindCentroidByErosion();
-	FindDistancesFromCentroid();
+	FindMiddlePoint();
+	FindDistancesMiddlePoint();
 	finish = std::chrono::high_resolution_clock::now();
 	elapsed = finish - start;
 	std::cout << elapsed.count() << "\n";
-
-	/*
-	if (isDebug)
-	{
-		std::vector<double> xAxis;
-		for (double i = 0; i < outlineVector.size(); i++)
-			xAxis.push_back(i);
-		PlotDrawer::PlotDrawer::draw("x", "y", xAxis, distancesFromCentroid);
-	}
-	*/
 
 	//11
 	start = std::chrono::high_resolution_clock::now();
@@ -765,34 +569,13 @@ std::vector<double> HandRecognition::CalculateAttributesFromHand(const bool& isD
 	//13
 	start = std::chrono::high_resolution_clock::now();
 	FindFingersOutlines();
-	if (isDebug)
-	{
-		cv::Point3i centr = CheckDistanceFromPoint(profile, centroid);
-		DrawDistRec(profile, centr);
-		DrawCrossInPoint(profile, centr, 255, false);
-		std::vector<std::pair<cv::Point3i, int>>::iterator it;
-		for (it = minimumEncircledFiveFingerPoints.begin(); it != std::end(minimumEncircledFiveFingerPoints); it++)
-		{
-			DrawCrossInPoint(profile, it->first, 150, true);
-		}	
-		for (it = maximumFiveFingerPoints.begin(); it != std::end(maximumFiveFingerPoints); it++)
-		{
-			DrawCrossInPoint(profile, it->first, 100, false);
-		}
-		std::vector<cv::Point>::iterator it2;
-		//for (it2 = sectionsEnds.begin(); it2 != std::end(sectionsEnds); it2++)
-		//{
-		//	DrawLineInPoint(profile, *it2, 200);
-		//}
-	}
-	SaveImage(path, filename + "-9-centroid.bmp", profile, isDebug);
 	finish = std::chrono::high_resolution_clock::now();
 	elapsed = finish - start;
 	std::cout << elapsed.count() << "\n";
 
 	//14
 	start = std::chrono::high_resolution_clock::now();
-	CalculateAtributes(path, filename, isDebug);
+	CalculateAtributes(path, filename);
 	NormalizeAttributes();
 	finish = std::chrono::high_resolution_clock::now();
 	elapsed = finish - start;
@@ -800,5 +583,3 @@ std::vector<double> HandRecognition::CalculateAttributesFromHand(const bool& isD
 
 	return attributes;
 }
-
-
